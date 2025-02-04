@@ -1,0 +1,423 @@
+import pygame
+import sys
+
+# Inicializar o Pygame
+pygame.init()
+
+# Dimensões da tela
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+
+# Configurar a tela
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Menu de Jogos")
+
+# Fonte
+font = pygame.font.Font(None, 36)
+
+# Funções para iniciar cada jogo (substitua estas funções pelos seus jogos reais)
+def game1():
+    import pygame
+
+    # Inicializa o pygame
+    pygame.init()
+
+    # Configurações da tela
+    WIDTH, HEIGHT = 600, 700
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Jogo da Velha")
+
+    # Cores
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    LINE_COLOR = (0, 0, 255)
+    X_COLOR = (255, 0, 0)
+    O_COLOR = (0, 255, 0)
+    BUTTON_COLOR = (100, 200, 100)
+
+    # Fonte
+    font = pygame.font.Font(None, 100)
+    small_font = pygame.font.Font(None, 50)
+
+    # Grade do jogo
+    grid = [[None, None, None], [None, None, None], [None, None, None]]
+    player = "X"
+    winner = None
+
+    def draw_board():
+        screen.fill(WHITE)
+        pygame.draw.line(screen, LINE_COLOR, (200, 0), (200, 600), 10)
+        pygame.draw.line(screen, LINE_COLOR, (400, 0), (400, 600), 10)
+        pygame.draw.line(screen, LINE_COLOR, (0, 200), (600, 200), 10)
+        pygame.draw.line(screen, LINE_COLOR, (0, 400), (600, 400), 10)
+        for i in range(3):
+            for j in range(3):
+                if grid[i][j] is not None:
+                    text = font.render(grid[i][j], True, X_COLOR if grid[i][j] == "X" else O_COLOR)
+                    screen.blit(text, (j * 200 + 50, i * 200 + 50))
+        if winner or all(all(cell is not None for cell in row) for row in grid):
+            draw_result()
+        pygame.display.flip()
+
+    # Função para verificar o vencedor
+    def check_winner():
+        for row in grid:
+            if row[0] == row[1] == row[2] and row[0] is not None:
+                return row[0]
+        for col in range(3):
+            if grid[0][col] == grid[1][col] == grid[2][col] and grid[0][col] is not None:
+                return grid[0][col]
+        if grid[0][0] == grid[1][1] == grid[2][2] and grid[0][0] is not None:
+            return grid[0][0]
+        if grid[0][2] == grid[1][1] == grid[2][0] and grid[0][2] is not None:
+            return grid[0][2]
+        return None
+
+    # Função para exibir o resultado
+    def draw_result():
+        result_text = f"{winner} venceu!" if winner else "Deu velha!"
+        text = small_font.render(result_text, True, BLACK)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 610))
+        pygame.draw.rect(screen, BUTTON_COLOR, (150, 650, 300, 50))
+        button_text = small_font.render("Reiniciar", True, BLACK)
+        screen.blit(button_text, (WIDTH // 2 - button_text.get_width() // 2, 660))
+
+    # Função para reiniciar o jogo
+    def reset_game():
+        nonlocal grid, player, winner
+        grid = [[None, None, None] for _ in range(3)]
+        player = "X"
+        winner = None
+
+    def jogo_da_velha():
+        nonlocal player, winner
+        running = True
+        while running:
+            draw_board()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = pygame.mouse.get_pos()
+                    if winner or all(all(cell is not None for cell in row) for row in grid):
+                        if 150 <= x <= 450 and 650 <= y <= 700:
+                            reset_game()
+                    else:
+                        col, row = x // 200, y // 200
+                        if grid[row][col] is None:
+                            grid[row][col] = player
+                            winner = check_winner()
+                            player = "O" if player == "X" else "X"
+        pygame.quit()
+
+    jogo_da_velha()
+
+def game2():
+    import pygame
+    import random
+
+    pygame.init()
+
+    WIDTH, HEIGHT = 600, 400
+    CELL_SIZE = 20
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Snake Game")
+
+    WHITE = (255, 255, 255)
+    GREEN = (0, 255, 0)
+    RED = (255, 0, 0)
+    BLACK = (0, 0, 0)
+
+    clock = pygame.time.Clock()
+
+    # Função para gerar comida
+    def generate_food():
+        return [random.randrange(0, WIDTH // CELL_SIZE) * CELL_SIZE,
+                random.randrange(0, HEIGHT // CELL_SIZE) * CELL_SIZE]
+
+    # Inicializa a cobra e comida
+    snake = [[WIDTH // 2, HEIGHT // 2]]
+    direction = "RIGHT"
+    delta = {"UP": (0, -CELL_SIZE), "DOWN": (0, CELL_SIZE), "LEFT": (-CELL_SIZE, 0), "RIGHT": (CELL_SIZE, 0)}
+    food = generate_food()
+    score = 0
+
+    # Loop principal
+    going = True
+    while going:
+        screen.fill(BLACK)
+
+        # Captura eventos
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                going = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and direction != "DOWN":
+                    direction = "UP"
+                elif event.key == pygame.K_DOWN and direction != "UP":
+                    direction = "DOWN"
+                elif event.key == pygame.K_LEFT and direction != "RIGHT":
+                    direction = "LEFT"
+                elif event.key == pygame.K_RIGHT and direction != "LEFT":
+                    direction = "RIGHT"
+
+        # Move a cobra
+        new_head = [snake[0][0] + delta[direction][0], snake[0][1] + delta[direction][1]]
+
+        # Verifica colisões
+        if new_head in snake or new_head[0] < 0 or new_head[0] >= WIDTH or new_head[1] < 0 or new_head[1] >= HEIGHT:
+            going = False
+        else:
+            snake.insert(0, new_head)
+
+            # Verifica se comeu a comida
+            if new_head == food:
+                food = generate_food()
+                score += 1
+            else:
+                snake.pop()
+
+        # Desenha comida
+        pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
+
+        # Desenha cobra
+        for segment in snake:
+            pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+
+        # Atualiza a tela
+        pygame.display.flip()
+        clock.tick(10)  # Controla a velocidade do jogo
+
+    pygame.quit()
+
+def game3():
+    import pygame
+    import random
+
+    # Inicializa o pygame
+    pygame.init()
+
+    # Configurações da tela
+    WIDTH, HEIGHT = 600, 600
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Jogo da Memória")
+
+    # Cores
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    BLUE = (0, 0, 255)
+    GREEN = (0, 255, 0)
+    GRAY = (150, 150, 150)
+
+    # Fonte
+    font = pygame.font.Font(None, 36)
+
+    # Configuração das cartas
+    CARTAS = list(range(1, 9)) * 2
+    random.shuffle(CARTAS)
+    TAMANHO_CARTA = 100
+    ESPACAMENTO = 20
+    LINHAS, COLUNAS = 4, 4
+    cartas_visiveis = [False] * 16
+    cartas_fixas = [False] * 16
+    cartas_selecionadas = []
+    pares_encontrados = 0
+
+    def desenhar_cartas():
+        screen.fill(WHITE)
+        for i in range(LINHAS):
+            for j in range(COLUNAS):
+                idx = i * COLUNAS + j
+                x, y = j * (TAMANHO_CARTA + ESPACAMENTO), i * (TAMANHO_CARTA + ESPACAMENTO)
+                if cartas_fixas[idx]:
+                    pygame.draw.rect(screen, GREEN, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+                elif cartas_visiveis[idx]:
+                    pygame.draw.rect(screen, BLUE, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+                    texto = font.render(str(CARTAS[idx]), True, BLACK)
+                    screen.blit(texto, (x + 35, y + 35))
+                else:
+                    pygame.draw.rect(screen, GRAY, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+        pygame.display.flip()
+
+    def verificar_cartas():
+        nonlocal cartas_selecionadas, pares_encontrados
+        if len(cartas_selecionadas) == 2:
+            i1, i2 = cartas_selecionadas
+            desenhar_cartas()  # Atualiza a tela para mostrar as duas cartas antes de verificar
+            pygame.time.delay(500)
+            if CARTAS[i1] == CARTAS[i2]:
+                pares_encontrados += 1
+                cartas_fixas[i1] = True
+                cartas_fixas[i2] = True
+            else:
+                cartas_visiveis[i1] = False
+                cartas_visiveis[i2] = False
+            cartas_selecionadas = []
+
+    def jogo_memoria():
+        nonlocal cartas_selecionadas, pares_encontrados
+        rodando = True
+        while rodando:
+            desenhar_cartas()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    rodando = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and len(cartas_selecionadas) < 2:
+                    x, y = pygame.mouse.get_pos()
+                    coluna, linha = x // (TAMANHO_CARTA + ESPACAMENTO), y // (TAMANHO_CARTA + ESPACAMENTO)
+                    idx = linha * COLUNAS + coluna
+                    if not cartas_visiveis[idx] and not cartas_fixas[idx]:
+                        cartas_visiveis[idx] = True
+                        cartas_selecionadas.append(idx)
+                        if len(cartas_selecionadas) == 2:
+                            verificar_cartas()
+            if pares_encontrados == 8:
+                print("Parabéns! Você encontrou todos os pares!")
+                rodando = False
+        pygame.quit()
+
+    jogo_memoria()
+
+def game4():
+    import pygame
+    import random
+
+    # Inicializa o pygame
+    pygame.init()
+
+    # Configurações da tela
+    WIDTH, HEIGHT = 800, 600
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Jogo da Forca")
+
+    # Cores
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    RED = (255, 0, 0)
+    BLUE = (0, 0, 255)
+    GREEN = (0, 255, 0)
+
+    # Fonte
+    font = pygame.font.Font(None, 36)
+
+    def escolher_palavra():
+        palavras = ["python", "programacao", "computador", "teclado", "monitor"]
+        return random.choice(palavras)
+
+    def exibir_palavra(palavra, letras_corretas):
+        return " ".join([letra if letra in letras_corretas else "_" for letra in palavra])
+
+    def desenhar_boneco(tentativas):
+        base_x, base_y = 400, 450
+
+        if tentativas < 6:  # Cabeça
+            pygame.draw.circle(screen, BLACK, (base_x, base_y - 100), 30, 2)
+        if tentativas < 5:  # Corpo
+            pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x, base_y), 2)
+        if tentativas < 4:  # Braço esquerdo
+            pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x - 40, base_y - 100), 2)
+        if tentativas < 3:  # Braço direito
+            pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x + 40, base_y - 100), 2)
+        if tentativas < 2:  # Perna esquerda
+            pygame.draw.line(screen, BLACK, (base_x, base_y), (base_x - 40, base_y + 50), 2)
+        if tentativas < 1:  # Perna direita
+            pygame.draw.line(screen, BLACK, (base_x, base_y), (base_x + 40, base_y + 50), 2)
+
+    def desenhar_tela(palavra, letras_corretas, letras_erradas, tentativas, mensagem=None):
+        screen.fill(WHITE)
+        texto_palavra = font.render(exibir_palavra(palavra, letras_corretas), True, BLACK)
+        screen.blit(texto_palavra, (WIDTH // 2 - texto_palavra.get_width() // 2, HEIGHT // 2 - 50))
+
+        texto_tentativas = font.render(f"Tentativas restantes: {tentativas}", True, RED)
+        screen.blit(texto_tentativas, (20, 20))
+
+        texto_erradas = font.render("Letras erradas: " + " ".join(letras_erradas), True, BLUE)
+        screen.blit(texto_erradas, (20, 60))
+
+        desenhar_boneco(tentativas)
+
+        if mensagem:
+            texto_mensagem = font.render(mensagem, True, GREEN)
+            screen.blit(texto_mensagem, (WIDTH // 2 - texto_mensagem.get_width() // 2, HEIGHT // 2 + 50))
+            botao_reiniciar = font.render("Pressione R para reiniciar ou Q para sair", True, BLACK)
+            screen.blit(botao_reiniciar, (WIDTH // 2 - botao_reiniciar.get_width() // 2, HEIGHT // 2 + 100))
+
+        pygame.display.flip()
+
+    def jogo_da_forca():
+        while True:
+            palavra = escolher_palavra()
+            letras_corretas = set()
+            letras_erradas = set()
+            tentativas = 6
+            jogando = True
+            mensagem = None
+
+            while jogando:
+                desenhar_tela(palavra, letras_corretas, letras_erradas, tentativas, mensagem)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return
+                    elif event.type == pygame.KEYDOWN:
+                        if mensagem:
+                            if event.key == pygame.K_r:
+                                jogando = False
+                            elif event.key == pygame.K_q:
+                                return
+                        else:
+                            letra = pygame.key.name(event.key)
+                            if len(letra) == 1 and letra.isalpha():
+                                letra = letra.lower()
+                                if letra in letras_corretas or letra in letras_erradas:
+                                    continue
+                                if letra in palavra:
+                                    letras_corretas.add(letra)
+                                else:
+                                    letras_erradas.add(letra)
+                                    tentativas -= 1
+
+                if set(palavra) == letras_corretas:
+                    mensagem = f"Parabéns! Você acertou a palavra: {palavra}"
+                elif tentativas == 0:
+                    mensagem = f"Fim de jogo! A palavra era: {palavra}"
+
+        pygame.quit()
+
+    jogo_da_forca()
+
+# Função para desenhar botões
+def draw_button(text, rect, action=None):
+    pygame.draw.rect(screen, BLUE, rect)
+    screen.blit(font.render(text, True, WHITE), (rect.x + 10, rect.y + 10))
+    if action:
+        pos = pygame.mouse.get_pos()
+        if rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0]:
+                action()
+
+# Loop principal
+running = True
+while running:
+    screen.fill(WHITE)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Desenhar botões
+    draw_button("Jogo 1", pygame.Rect(100, 100, 200, 50), game1)
+    draw_button("Jogo 2", pygame.Rect(100, 200, 200, 50), game2)
+    draw_button("Jogo 3", pygame.Rect(100, 300, 200, 50), game3)
+    draw_button("Jogo 4", pygame.Rect(100, 400, 200, 50), game4)
+
+    pygame.display.flip()
+
+pygame.quit()
+sys.exit()
