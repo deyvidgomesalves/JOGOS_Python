@@ -1,0 +1,107 @@
+import pygame
+import random
+
+# Inicializa o pygame
+pygame.init()
+
+# Configurações da tela
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jogo da Forca")
+
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+
+# Fonte
+font = pygame.font.Font(None, 36)
+
+def escolher_palavra():
+    palavras = ["python", "programacao", "computador", "teclado", "monitor"]
+    return random.choice(palavras)
+
+def exibir_palavra(palavra, letras_corretas):
+    return " ".join([letra if letra in letras_corretas else "_" for letra in palavra])
+
+def desenhar_boneco(tentativas):
+    base_x, base_y = 400, 450
+    
+    if tentativas < 6:  # Cabeça
+        pygame.draw.circle(screen, BLACK, (base_x, base_y - 100), 30, 2)
+    if tentativas < 5:  # Corpo
+        pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x, base_y), 2)
+    if tentativas < 4:  # Braço esquerdo
+        pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x - 40, base_y - 100), 2)
+    if tentativas < 3:  # Braço direito
+        pygame.draw.line(screen, BLACK, (base_x, base_y - 70), (base_x + 40, base_y - 100), 2)
+    if tentativas < 2:  # Perna esquerda
+        pygame.draw.line(screen, BLACK, (base_x, base_y), (base_x - 40, base_y + 50), 2)
+    if tentativas < 1:  # Perna direita
+        pygame.draw.line(screen, BLACK, (base_x, base_y), (base_x + 40, base_y + 50), 2)
+
+def desenhar_tela(palavra, letras_corretas, letras_erradas, tentativas, mensagem=None):
+    screen.fill(WHITE)
+    texto_palavra = font.render(exibir_palavra(palavra, letras_corretas), True, BLACK)
+    screen.blit(texto_palavra, (WIDTH // 2 - texto_palavra.get_width() // 2, HEIGHT // 2 - 50))
+    
+    texto_tentativas = font.render(f"Tentativas restantes: {tentativas}", True, RED)
+    screen.blit(texto_tentativas, (20, 20))
+    
+    texto_erradas = font.render("Letras erradas: " + " ".join(letras_erradas), True, BLUE)
+    screen.blit(texto_erradas, (20, 60))
+    
+    desenhar_boneco(tentativas)
+    
+    if mensagem:
+        texto_mensagem = font.render(mensagem, True, GREEN)
+        screen.blit(texto_mensagem, (WIDTH // 2 - texto_mensagem.get_width() // 2, HEIGHT // 2 + 50))
+        botao_reiniciar = font.render("Pressione R para reiniciar ou Q para sair", True, BLACK)
+        screen.blit(botao_reiniciar, (WIDTH // 2 - botao_reiniciar.get_width() // 2, HEIGHT // 2 + 100))
+    
+    pygame.display.flip()
+
+def jogo_da_forca():
+    while True:
+        palavra = escolher_palavra()
+        letras_corretas = set()
+        letras_erradas = set()
+        tentativas = 6
+        jogando = True
+        mensagem = None
+        
+        while jogando:
+            desenhar_tela(palavra, letras_corretas, letras_erradas, tentativas, mensagem)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    if mensagem:
+                        if event.key == pygame.K_r:
+                            jogando = False
+                        elif event.key == pygame.K_q:
+                            return
+                    else:
+                        letra = pygame.key.name(event.key)
+                        if len(letra) == 1 and letra.isalpha():
+                            letra = letra.lower()
+                            if letra in letras_corretas or letra in letras_erradas:
+                                continue
+                            if letra in palavra:
+                                letras_corretas.add(letra)
+                            else:
+                                letras_erradas.add(letra)
+                                tentativas -= 1
+            
+            if set(palavra) == letras_corretas:
+                mensagem = f"Parabéns! Você acertou a palavra: {palavra}"  
+            elif tentativas == 0:
+                mensagem = f"Fim de jogo! A palavra era: {palavra}"  
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    jogo_da_forca()
