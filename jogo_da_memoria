@@ -1,0 +1,88 @@
+import pygame
+import random
+
+# Inicializa o pygame
+pygame.init()
+
+# Configurações da tela
+WIDTH, HEIGHT = 600, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jogo da Memória")
+
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+GRAY = (150, 150, 150)
+
+# Fonte
+font = pygame.font.Font(None, 36)
+
+# Configuração das cartas
+CARTAS = list(range(1, 9)) * 2
+random.shuffle(CARTAS)
+TAMANHO_CARTA = 100
+ESPACAMENTO = 20
+LINHAS, COLUNAS = 4, 4
+cartas_visiveis = [False] * 16
+cartas_fixas = [False] * 16
+cartas_selecionadas = []
+pares_encontrados = 0
+ultima_selecao = None
+
+def desenhar_cartas():
+    screen.fill(WHITE)
+    for i in range(LINHAS):
+        for j in range(COLUNAS):
+            idx = i * COLUNAS + j
+            x, y = j * (TAMANHO_CARTA + ESPACAMENTO), i * (TAMANHO_CARTA + ESPACAMENTO)
+            if cartas_fixas[idx]:
+                pygame.draw.rect(screen, GREEN, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+            elif cartas_visiveis[idx]:
+                pygame.draw.rect(screen, BLUE, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+                texto = font.render(str(CARTAS[idx]), True, BLACK)
+                screen.blit(texto, (x + 35, y + 35))
+            else:
+                pygame.draw.rect(screen, GRAY, (x, y, TAMANHO_CARTA, TAMANHO_CARTA))
+    pygame.display.flip()
+
+def verificar_cartas():
+    global cartas_selecionadas, pares_encontrados, ultima_selecao
+    if len(cartas_selecionadas) == 2:
+        i1, i2 = cartas_selecionadas
+        desenhar_cartas()  # Atualiza a tela para mostrar as duas cartas antes de verificar
+        pygame.time.delay(500)
+        if CARTAS[i1] == CARTAS[i2]:
+            pares_encontrados += 1
+            cartas_fixas[i1] = True
+            cartas_fixas[i2] = True
+        else:
+            cartas_visiveis[i1] = False
+            cartas_visiveis[i2] = False
+        cartas_selecionadas = []
+
+def jogo_memoria():
+    global cartas_selecionadas, ultima_selecao
+    rodando = True
+    while rodando:
+        desenhar_cartas()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                rodando = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and len(cartas_selecionadas) < 2:
+                x, y = pygame.mouse.get_pos()
+                coluna, linha = x // (TAMANHO_CARTA + ESPACAMENTO), y // (TAMANHO_CARTA + ESPACAMENTO)
+                idx = linha * COLUNAS + coluna
+                if not cartas_visiveis[idx] and not cartas_fixas[idx]:
+                    cartas_visiveis[idx] = True
+                    cartas_selecionadas.append(idx)
+                    if len(cartas_selecionadas) == 2:
+                        verificar_cartas()
+        if pares_encontrados == 8:
+            print("Parabéns! Você encontrou todos os pares!")
+            rodando = False
+    pygame.quit()
+
+if __name__ == "__main__":
+    jogo_memoria()
