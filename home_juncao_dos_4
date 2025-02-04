@@ -84,9 +84,12 @@ def game1():
         result_text = f"{winner} venceu!" if winner else "Deu velha!"
         text = small_font.render(result_text, True, BLACK)
         screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 610))
-        pygame.draw.rect(screen, BUTTON_COLOR, (150, 650, 300, 50))
+        pygame.draw.rect(screen, BUTTON_COLOR, (50, 650, 200, 50))
         button_text = small_font.render("Reiniciar", True, BLACK)
-        screen.blit(button_text, (WIDTH // 2 - button_text.get_width() // 2, 660))
+        screen.blit(button_text, (150 - button_text.get_width() // 2, 660))
+        pygame.draw.rect(screen, BUTTON_COLOR, (350, 650, 200, 50))
+        back_text = small_font.render("Voltar ao Menu", True, BLACK)
+        screen.blit(back_text, (450 - back_text.get_width() // 2, 660))
 
     # Função para reiniciar o jogo
     def reset_game():
@@ -102,22 +105,23 @@ def game1():
             draw_board()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    pygame.quit()
+                    sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = pygame.mouse.get_pos()
                     if winner or all(all(cell is not None for cell in row) for row in grid):
-                        if 150 <= x <= 450 and 650 <= y <= 700:
+                        if 50 <= x <= 250 and 650 <= y <= 700:
                             reset_game()
+                        elif 350 <= x <= 550 and 650 <= y <= 700:
+                            return  # Voltar ao menu
                     else:
                         col, row = x // 200, y // 200
                         if grid[row][col] is None:
                             grid[row][col] = player
                             winner = check_winner()
                             player = "O" if player == "X" else "X"
-        pygame.quit()
 
     jogo_da_velha()
-
 def game2():
     import pygame
     import random
@@ -133,6 +137,7 @@ def game2():
     GREEN = (0, 255, 0)
     RED = (255, 0, 0)
     BLACK = (0, 0, 0)
+    BUTTON_COLOR = (100, 200, 100)
 
     clock = pygame.time.Clock()
 
@@ -147,55 +152,87 @@ def game2():
     delta = {"UP": (0, -CELL_SIZE), "DOWN": (0, CELL_SIZE), "LEFT": (-CELL_SIZE, 0), "RIGHT": (CELL_SIZE, 0)}
     food = generate_food()
     score = 0
+    game_over = False
+
+    def draw_game_over():
+        screen.fill(BLACK)
+        font = pygame.font.Font(None, 50)
+        text = font.render("Game Over", True, RED)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        pygame.draw.rect(screen, BUTTON_COLOR, (150, 300, 300, 50))
+        button_text = font.render("Reiniciar", True, BLACK)
+        screen.blit(button_text, (WIDTH // 2 - button_text.get_width() // 2, 310))
+        pygame.draw.rect(screen, BUTTON_COLOR, (150, 360, 300, 50))
+        menu_text = font.render("Voltar ao Menu", True, BLACK)
+        screen.blit(menu_text, (WIDTH // 2 - menu_text.get_width() // 2, 370))
+        pygame.display.flip()
 
     # Loop principal
     going = True
     while going:
         screen.fill(BLACK)
 
-        # Captura eventos
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                going = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP and direction != "DOWN":
-                    direction = "UP"
-                elif event.key == pygame.K_DOWN and direction != "UP":
-                    direction = "DOWN"
-                elif event.key == pygame.K_LEFT and direction != "RIGHT":
-                    direction = "LEFT"
-                elif event.key == pygame.K_RIGHT and direction != "LEFT":
-                    direction = "RIGHT"
-
-        # Move a cobra
-        new_head = [snake[0][0] + delta[direction][0], snake[0][1] + delta[direction][1]]
-
-        # Verifica colisões
-        if new_head in snake or new_head[0] < 0 or new_head[0] >= WIDTH or new_head[1] < 0 or new_head[1] >= HEIGHT:
-            going = False
+        if game_over:
+            draw_game_over()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = pygame.mouse.get_pos()
+                    if 150 <= x <= 450 and 300 <= y <= 350:
+                        # Reiniciar o jogo
+                        snake = [[WIDTH // 2, HEIGHT // 2]]
+                        direction = "RIGHT"
+                        food = generate_food()
+                        score = 0
+                        game_over = False
+                    elif 150 <= x <= 450 and 360 <= y <= 410:
+                        return  # Voltar ao menu
         else:
-            snake.insert(0, new_head)
+            # Captura eventos
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP and direction != "DOWN":
+                        direction = "UP"
+                    elif event.key == pygame.K_DOWN and direction != "UP":
+                        direction = "DOWN"
+                    elif event.key == pygame.K_LEFT and direction != "RIGHT":
+                        direction = "LEFT"
+                    elif event.key == pygame.K_RIGHT and direction != "LEFT":
+                        direction = "RIGHT"
 
-            # Verifica se comeu a comida
-            if new_head == food:
-                food = generate_food()
-                score += 1
+            # Move a cobra
+            new_head = [snake[0][0] + delta[direction][0], snake[0][1] + delta[direction][1]]
+
+            # Verifica colisões
+            if new_head in snake or new_head[0] < 0 or new_head[0] >= WIDTH or new_head[1] < 0 or new_head[1] >= HEIGHT:
+                game_over = True
             else:
-                snake.pop()
+                snake.insert(0, new_head)
 
-        # Desenha comida
-        pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
+                # Verifica se comeu a comida
+                if new_head == food:
+                    food = generate_food()
+                    score += 1
+                else:
+                    snake.pop()
 
-        # Desenha cobra
-        for segment in snake:
-            pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+            # Desenha comida
+            pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
 
-        # Atualiza a tela
-        pygame.display.flip()
-        clock.tick(10)  # Controla a velocidade do jogo
+            # Desenha cobra
+            for segment in snake:
+                pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+
+            # Atualiza a tela
+            pygame.display.flip()
+            clock.tick(10)  # Controla a velocidade do jogo
 
     pygame.quit()
-
 def game3():
     import pygame
     import random
@@ -214,6 +251,7 @@ def game3():
     BLUE = (0, 0, 255)
     GREEN = (0, 255, 0)
     GRAY = (150, 150, 150)
+    BUTTON_COLOR = (100, 200, 100)
 
     # Fonte
     font = pygame.font.Font(None, 36)
@@ -228,6 +266,7 @@ def game3():
     cartas_fixas = [False] * 16
     cartas_selecionadas = []
     pares_encontrados = 0
+    game_over = False
 
     def desenhar_cartas():
         screen.fill(WHITE)
@@ -246,7 +285,7 @@ def game3():
         pygame.display.flip()
 
     def verificar_cartas():
-        nonlocal cartas_selecionadas, pares_encontrados
+        nonlocal cartas_selecionadas, pares_encontrados, game_over
         if len(cartas_selecionadas) == 2:
             i1, i2 = cartas_selecionadas
             desenhar_cartas()  # Atualiza a tela para mostrar as duas cartas antes de verificar
@@ -260,30 +299,60 @@ def game3():
                 cartas_visiveis[i2] = False
             cartas_selecionadas = []
 
+            if pares_encontrados == 8:
+                game_over = True
+
+    def desenhar_fim_de_jogo():
+        screen.fill(WHITE)
+        font = pygame.font.Font(None, 50)
+        text = font.render("Parabéns! Você encontrou todos os pares!", True, BLACK)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        pygame.draw.rect(screen, BUTTON_COLOR, (150, 400, 300, 50))
+        button_text = font.render("Reiniciar", True, BLACK)
+        screen.blit(button_text, (WIDTH // 2 - button_text.get_width() // 2, 410))
+        pygame.draw.rect(screen, BUTTON_COLOR, (150, 460, 300, 50))
+        menu_text = font.render("Voltar ao Menu", True, BLACK)
+        screen.blit(menu_text, (WIDTH // 2 - menu_text.get_width() // 2, 470))
+        pygame.display.flip()
+
     def jogo_memoria():
-        nonlocal cartas_selecionadas, pares_encontrados
+        nonlocal cartas_selecionadas, pares_encontrados, game_over
         rodando = True
         while rodando:
-            desenhar_cartas()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    rodando = False
-                elif event.type == pygame.MOUSEBUTTONDOWN and len(cartas_selecionadas) < 2:
-                    x, y = pygame.mouse.get_pos()
-                    coluna, linha = x // (TAMANHO_CARTA + ESPACAMENTO), y // (TAMANHO_CARTA + ESPACAMENTO)
-                    idx = linha * COLUNAS + coluna
-                    if not cartas_visiveis[idx] and not cartas_fixas[idx]:
-                        cartas_visiveis[idx] = True
-                        cartas_selecionadas.append(idx)
-                        if len(cartas_selecionadas) == 2:
-                            verificar_cartas()
-            if pares_encontrados == 8:
-                print("Parabéns! Você encontrou todos os pares!")
-                rodando = False
-        pygame.quit()
+            if game_over:
+                desenhar_fim_de_jogo()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        x, y = pygame.mouse.get_pos()
+                        if 150 <= x <= 450 and 400 <= y <= 450:
+                            # Reiniciar o jogo
+                            cartas_visiveis[:] = [False] * 16
+                            cartas_fixas[:] = [False] * 16
+                            random.shuffle(CARTAS)
+                            pares_encontrados = 0
+                            game_over = False
+                        elif 150 <= x <= 450 and 460 <= y <= 510:
+                            return  # Voltar ao menu
+            else:
+                desenhar_cartas()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.MOUSEBUTTONDOWN and len(cartas_selecionadas) < 2:
+                        x, y = pygame.mouse.get_pos()
+                        coluna, linha = x // (TAMANHO_CARTA + ESPACAMENTO), y // (TAMANHO_CARTA + ESPACAMENTO)
+                        idx = linha * COLUNAS + coluna
+                        if not cartas_visiveis[idx] and not cartas_fixas[idx]:
+                            cartas_visiveis[idx] = True
+                            cartas_selecionadas.append(idx)
+                            if len(cartas_selecionadas) == 2:
+                                verificar_cartas()
 
     jogo_memoria()
-
 def game4():
     import pygame
     import random
@@ -302,6 +371,7 @@ def game4():
     RED = (255, 0, 0)
     BLUE = (0, 0, 255)
     GREEN = (0, 255, 0)
+    BUTTON_COLOR = (100, 200, 100)
 
     # Fonte
     font = pygame.font.Font(None, 36)
@@ -347,6 +417,9 @@ def game4():
             screen.blit(texto_mensagem, (WIDTH // 2 - texto_mensagem.get_width() // 2, HEIGHT // 2 + 50))
             botao_reiniciar = font.render("Pressione R para reiniciar ou Q para sair", True, BLACK)
             screen.blit(botao_reiniciar, (WIDTH // 2 - botao_reiniciar.get_width() // 2, HEIGHT // 2 + 100))
+            pygame.draw.rect(screen, BUTTON_COLOR, (250, 500, 300, 50))
+            menu_text = font.render("Voltar ao Menu", True, BLACK)
+            screen.blit(menu_text, (WIDTH // 2 - menu_text.get_width() // 2, 510))
 
         pygame.display.flip()
 
@@ -364,7 +437,8 @@ def game4():
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        return
+                        pygame.quit()
+                        sys.exit()
                     elif event.type == pygame.KEYDOWN:
                         if mensagem:
                             if event.key == pygame.K_r:
@@ -388,10 +462,19 @@ def game4():
                 elif tentativas == 0:
                     mensagem = f"Fim de jogo! A palavra era: {palavra}"
 
+                if mensagem:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+                        elif event.type == pygame.MOUSEBUTTONDOWN:
+                            x, y = pygame.mouse.get_pos()
+                            if 250 <= x <= 550 and 500 <= y <= 550:
+                                return  # Voltar ao menu
+
         pygame.quit()
 
     jogo_da_forca()
-
 # Função para desenhar botões
 def draw_button(text, rect, action=None):
     pygame.draw.rect(screen, BLUE, rect)
@@ -412,10 +495,10 @@ while running:
             running = False
 
     # Desenhar botões
-    draw_button("Jogo 1", pygame.Rect(100, 100, 200, 50), game1)
-    draw_button("Jogo 2", pygame.Rect(100, 200, 200, 50), game2)
-    draw_button("Jogo 3", pygame.Rect(100, 300, 200, 50), game3)
-    draw_button("Jogo 4", pygame.Rect(100, 400, 200, 50), game4)
+    draw_button("Jogo da Velha", pygame.Rect(100, 100, 200, 50), game1)
+    draw_button("Jogo da Cobra", pygame.Rect(100, 200, 200, 50), game2)
+    draw_button("Jogo da Memória", pygame.Rect(100, 300, 200, 50), game3)
+    draw_button("Jogo da Forca", pygame.Rect(100, 400, 200, 50), game4)
 
     pygame.display.flip()
 
