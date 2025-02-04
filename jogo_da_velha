@@ -1,0 +1,95 @@
+import pygame
+
+# Inicializa o pygame
+pygame.init()
+
+# Configurações da tela
+WIDTH, HEIGHT = 600, 700
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jogo da Velha")
+
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+LINE_COLOR = (0, 0, 255)
+X_COLOR = (255, 0, 0)
+O_COLOR = (0, 255, 0)
+BUTTON_COLOR = (100, 200, 100)
+
+# Fonte
+font = pygame.font.Font(None, 100)
+small_font = pygame.font.Font(None, 50)
+
+# Grade do jogo
+grid = [[None, None, None], [None, None, None], [None, None, None]]
+player = "X"
+winner = None
+
+def draw_board():
+    screen.fill(WHITE)
+    pygame.draw.line(screen, LINE_COLOR, (200, 0), (200, 600), 10)
+    pygame.draw.line(screen, LINE_COLOR, (400, 0), (400, 600), 10)
+    pygame.draw.line(screen, LINE_COLOR, (0, 200), (600, 200), 10)
+    pygame.draw.line(screen, LINE_COLOR, (0, 400), (600, 400), 10)
+    for i in range(3):
+        for j in range(3):
+            if grid[i][j] is not None:
+                text = font.render(grid[i][j], True, X_COLOR if grid[i][j] == "X" else O_COLOR)
+                screen.blit(text, (j * 200 + 50, i * 200 + 50))
+    if winner or all(all(cell is not None for cell in row) for row in grid):
+        draw_result()
+    pygame.display.flip()
+
+# Função para verificar o vencedor
+def check_winner():
+    for row in grid:
+        if row[0] == row[1] == row[2] and row[0] is not None:
+            return row[0]
+    for col in range(3):
+        if grid[0][col] == grid[1][col] == grid[2][col] and grid[0][col] is not None:
+            return grid[0][col]
+    if grid[0][0] == grid[1][1] == grid[2][2] and grid[0][0] is not None:
+        return grid[0][0]
+    if grid[0][2] == grid[1][1] == grid[2][0] and grid[0][2] is not None:
+        return grid[0][2]
+    return None
+
+# Função para exibir o resultado
+def draw_result():
+    result_text = f"{winner} venceu!" if winner else "Deu velha!"
+    text = small_font.render(result_text, True, BLACK)
+    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 610))
+    pygame.draw.rect(screen, BUTTON_COLOR, (150, 650, 300, 50))
+    button_text = small_font.render("Reiniciar", True, BLACK)
+    screen.blit(button_text, (WIDTH // 2 - button_text.get_width() // 2, 660))
+
+# Função para reiniciar o jogo
+def reset_game():
+    global grid, player, winner
+    grid = [[None, None, None] for _ in range(3)]
+    player = "X"
+    winner = None
+
+def jogo_da_velha():
+    global player, winner
+    running = True
+    while running:
+        draw_board()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if winner or all(all(cell is not None for cell in row) for row in grid):
+                    if 150 <= x <= 450 and 650 <= y <= 700:
+                        reset_game()
+                else:
+                    col, row = x // 200, y // 200
+                    if grid[row][col] is None:
+                        grid[row][col] = player
+                        winner = check_winner()
+                        player = "O" if player == "X" else "X"
+    pygame.quit()
+
+if __name__ == "__main__":
+    jogo_da_velha()
