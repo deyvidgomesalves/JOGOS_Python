@@ -1,0 +1,81 @@
+import pygame
+import random
+
+
+pygame.init()
+
+
+WIDTH, HEIGHT = 600, 400
+CELL_SIZE = 20
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Snake Game")
+
+
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+BLACK = (0, 0, 0)
+
+
+clock = pygame.time.Clock()
+
+
+# Função para gerar comida
+def generate_food():
+    return [random.randrange(0, WIDTH // CELL_SIZE) * CELL_SIZE, random.randrange(0, HEIGHT // CELL_SIZE) * CELL_SIZE]
+
+
+# Inicializa a cobra e comida
+snake = [[WIDTH // 2, HEIGHT // 2]]
+direction = "RIGHT"
+delta = {"UP": (0, -CELL_SIZE), "DOWN": (0, CELL_SIZE), "LEFT": (-CELL_SIZE, 0), "RIGHT": (CELL_SIZE, 0)}
+food = generate_food()
+score = 0
+
+# Loop principal
+going = True
+while going:
+    screen.fill(BLACK)
+
+    # Captura eventos
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            going = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP and direction != "DOWN":
+                direction = "UP"
+            elif event.key == pygame.K_DOWN and direction != "UP":
+                direction = "DOWN"
+            elif event.key == pygame.K_LEFT and direction != "RIGHT":
+                direction = "LEFT"
+            elif event.key == pygame.K_RIGHT and direction != "LEFT":
+                direction = "RIGHT"
+
+    # Move a cobra
+    new_head = [snake[0][0] + delta[direction][0], snake[0][1] + delta[direction][1]]
+
+    # Verifica colisões
+    if new_head in snake or new_head[0] < 0 or new_head[0] >= WIDTH or new_head[1] < 0 or new_head[1] >= HEIGHT:
+        going = False
+    else:
+        snake.insert(0, new_head)
+
+        # Verifica se comeu a comida
+        if new_head == food:
+            food = generate_food()
+            score += 1
+        else:
+            snake.pop()
+
+    # Desenha comida
+    pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
+
+    # Desenha cobra
+    for segment in snake:
+        pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+
+    # Atualiza a tela
+    pygame.display.flip()
+    clock.tick(10)  # Controla a velocidade do jogo
+
+pygame.quit()
