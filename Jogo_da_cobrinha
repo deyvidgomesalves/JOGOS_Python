@@ -1,81 +1,161 @@
 import pygame
 import random
 
-
 pygame.init()
 
+LARGURA, ALTURA = 600, 400
+TAMANHO_CELULA = 20
+ALTURA_RODAPE = 60
+tela = pygame.display.set_mode((LARGURA, ALTURA + ALTURA_RODAPE))
+pygame.display.set_caption("Jogo da Cobrinha")
 
-WIDTH, HEIGHT = 600, 400
-CELL_SIZE = 20
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Snake Game")
+BRANCO = (255, 255, 255)
+VERDE = (0, 255, 0)
+VERMELHO = (255, 0, 0)
+PRETO = (0, 0, 0)
+AZUL = (0, 0, 255)
+AMARELO = (255, 255, 0)
+VERMELHO_CLARO = (255, 102, 102)
 
-
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLACK = (0, 0, 0)
-
-
-clock = pygame.time.Clock()
-
+relogio = pygame.time.Clock()
 
 # Função para gerar comida
-def generate_food():
-    return [random.randrange(0, WIDTH // CELL_SIZE) * CELL_SIZE, random.randrange(0, HEIGHT // CELL_SIZE) * CELL_SIZE]
+def gerar_comida():
+    return [random.randrange(0, LARGURA // TAMANHO_CELULA) * TAMANHO_CELULA, random.randrange(0, ALTURA // TAMANHO_CELULA) * TAMANHO_CELULA]
 
+# Função para mostrar texto na tela
+def mostrar_texto(texto, tamanho, cor, x, y):
+    fonte = pygame.font.SysFont(None, tamanho)
+    superficie_texto = fonte.render(texto, True, cor)
+    tela.blit(superficie_texto, (x, y))
+
+# Função para reiniciar o jogo
+def reiniciar_jogo():
+    global cobra, direcao, comida, pontuacao, jogando, velocidade, tempo_comida
+    cobra = [[LARGURA // 2, ALTURA // 2]]
+    direcao = "DIREITA"
+    comida = gerar_comida()
+    pontuacao = 0
+    jogando = True
+    velocidade = 10
+    tempo_comida = pygame.time.get_ticks()  # Marca o tempo inicial da comida
+
+# Função para desenhar botões
+def desenhar_botao(texto, cor, x, y, largura, altura):
+    pygame.draw.rect(tela, cor, (x, y, largura, altura))
+    mostrar_texto(texto, 24, BRANCO, x + 10, y + 10)
+
+# Função para verificar se um ponto está dentro de um retângulo
+def ponto_em_retangulo(x, y, rect):
+    return rect[0] <= x <= rect[0] + rect[2] and rect[1] <= y <= rect[1] + rect[3]
 
 # Inicializa a cobra e comida
-snake = [[WIDTH // 2, HEIGHT // 2]]
-direction = "RIGHT"
-delta = {"UP": (0, -CELL_SIZE), "DOWN": (0, CELL_SIZE), "LEFT": (-CELL_SIZE, 0), "RIGHT": (CELL_SIZE, 0)}
-food = generate_food()
-score = 0
+cobra = [[LARGURA // 2, ALTURA // 2]]
+direcao = "DIREITA"
+delta = {"CIMA": (0, -TAMANHO_CELULA), "BAIXO": (0, TAMANHO_CELULA), "ESQUERDA": (-TAMANHO_CELULA, 0), "DIREITA": (TAMANHO_CELULA, 0)}
+comida = gerar_comida()
+pontuacao = 0
+recorde = 0
+jogando = True
+velocidade = 10
+cor_cobrinha = VERDE
+tempo_comida = pygame.time.get_ticks()  # Marca o tempo inicial da comida
 
 # Loop principal
-going = True
-while going:
-    screen.fill(BLACK)
+while True:
+    while jogando:
+        tela.fill(PRETO)
 
-    # Captura eventos
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            going = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and direction != "DOWN":
-                direction = "UP"
-            elif event.key == pygame.K_DOWN and direction != "UP":
-                direction = "DOWN"
-            elif event.key == pygame.K_LEFT and direction != "RIGHT":
-                direction = "LEFT"
-            elif event.key == pygame.K_RIGHT and direction != "LEFT":
-                direction = "RIGHT"
+        # Captura eventos
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                jogando = False
+                pygame.quit()
+                exit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP and direcao != "BAIXO":
+                    direcao = "CIMA"
+                elif evento.key == pygame.K_DOWN and direcao != "CIMA":
+                    direcao = "BAIXO"
+                elif evento.key == pygame.K_LEFT and direcao != "DIREITA":
+                    direcao = "ESQUERDA"
+                elif evento.key == pygame.K_RIGHT and direcao != "ESQUERDA":
+                    direcao = "DIREITA"
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                x, y = evento.pos
+                if ponto_em_retangulo(x, y, (450, ALTURA + 10, 140, 40)):
+                    velocidade += 2  # Aumentar a velocidade
+                elif ponto_em_retangulo(x, y, (300, ALTURA + 10, 140, 40)):
+                    cor_cobrinha = random.choice([VERDE, AZUL, AMARELO])  # Trocar cor da cobrinha
 
-    # Move a cobra
-    new_head = [snake[0][0] + delta[direction][0], snake[0][1] + delta[direction][1]]
+        # Move a cobra
+        nova_cabeca = [cobra[0][0] + delta[direcao][0], cobra[0][1] + delta[direcao][1]]
 
-    # Verifica colisões
-    if new_head in snake or new_head[0] < 0 or new_head[0] >= WIDTH or new_head[1] < 0 or new_head[1] >= HEIGHT:
-        going = False
-    else:
-        snake.insert(0, new_head)
-
-        # Verifica se comeu a comida
-        if new_head == food:
-            food = generate_food()
-            score += 1
+        # Verifica colisões
+        if nova_cabeca in cobra or nova_cabeca[0] < 0 or nova_cabeca[0] >= LARGURA or nova_cabeca[1] < 0 or nova_cabeca[1] >= ALTURA:
+            jogando = False
+            # Atualiza o recorde se a pontuação atual for maior
+            if pontuacao > recorde:
+                recorde = pontuacao
         else:
-            snake.pop()
+            cobra.insert(0, nova_cabeca)
 
-    # Desenha comida
-    pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
+            # Verifica se comeu a comida
+            if nova_cabeca == comida:
+                comida = gerar_comida()
+                pontuacao += 1
+                tempo_comida = pygame.time.get_ticks()  # Reseta o tempo ao comer a comida
+            else:
+                cobra.pop()
 
-    # Desenha cobra
-    for segment in snake:
-        pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+        # Verifica se o tempo para comer a comida expirou
+        tempo_restante = 10 - (pygame.time.get_ticks() - tempo_comida) / 1000
+        if tempo_restante <= 0:
+            jogando = False
+            # Atualiza o recorde se a pontuação atual for maior
+            if pontuacao > recorde:
+                recorde = pontuacao
 
-    # Atualiza a tela
-    pygame.display.flip()
-    clock.tick(10)  # Controla a velocidade do jogo
+        # Desenha comida
+        pygame.draw.rect(tela, VERMELHO, (*comida, TAMANHO_CELULA, TAMANHO_CELULA))
 
-pygame.quit()
+        # Desenha cobra
+        for segmento in cobra:
+            pygame.draw.rect(tela, cor_cobrinha, (*segmento, TAMANHO_CELULA, TAMANHO_CELULA))
+
+        # Desenha rodapé
+        pygame.draw.rect(tela, BRANCO, (0, ALTURA, LARGURA, ALTURA_RODAPE))
+
+        # Mostra a pontuação e recorde no rodapé
+        mostrar_texto(f"Pontuação: {pontuacao}", 24, PRETO, 10, ALTURA + 10)
+        mostrar_texto(f"Recorde: {recorde}", 24, PRETO, 10, ALTURA + 35)
+
+        # Desenha botões
+        desenhar_botao("Aumentar Vel.", VERDE, 450, ALTURA + 10, 140, 40)
+        desenhar_botao("Trocar Cor", VERDE, 300, ALTURA + 10, 140, 40)
+
+        # Mostra o temporizador no topo da tela
+        mostrar_texto(f"Tempo: {tempo_restante:.1f}s", 24, VERMELHO_CLARO, LARGURA // 2 - 50, 10)
+
+        # Atualiza a tela
+        pygame.display.flip()
+        relogio.tick(velocidade)  # Controla a velocidade do jogo
+
+    # Tela de Game Over
+    while not jogando:
+        tela.fill(PRETO)
+        mostrar_texto("Fim de Jogo", 72, VERMELHO, LARGURA // 2 - 150, ALTURA // 2 - 100)
+        mostrar_texto(f"Pontuação Final: {pontuacao}", 36, BRANCO, LARGURA // 2 - 100, ALTURA // 2)
+        mostrar_texto("Pressione R para Reiniciar ou Q para Sair", 36, BRANCO, LARGURA // 2 - 200, ALTURA // 2 + 50)
+        pygame.display.flip()
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_r:
+                    reiniciar_jogo()
+                elif evento.key == pygame.K_q:
+                    pygame.quit()
+                    exit()
